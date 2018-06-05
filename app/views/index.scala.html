@@ -1,5 +1,62 @@
 @()
 
-@main("Welcome to Play") {
-  <h1>Welcome to Play!</h1>
+@main("Payroll Report") {
+  <h1>Payroll Report</h1>
+  <table class="ui celled table">
+    <thead>
+      <tr>
+        <th>Employee Id</th>
+        <th>Pay Period</th>
+        <th>Amount Paid</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>id0</td>
+        <td>1/11/2016 - 15/11/2016</td>
+        <td>$300.00</td>
+      </tr>
+      <tr>
+        <td>id0</td>
+        <td>1/11/2016 - 15/11/2016</td>
+        <td>$300.00</td>
+      </tr>
+      <tr>
+        <td>id0</td>
+        <td>1/11/2016 - 15/11/2016</td>
+        <td>$300.00</td>
+      </tr>
+      <tr>
+        <td>id0</td>
+        <td>1/11/2016 - 15/11/2016</td>
+        <td>$300.00</td>
+      </tr>
+      <tr>
+        <td>id0</td>
+        <td>1/11/2016 - 15/11/2016</td>
+        <td>$300.00</td>
+      </tr>
+      <tr>
+        <td>id0</td>
+        <td>1/11/2016 - 15/11/2016</td>
+        <td>$300.00</td>
+      </tr>
+      <tr>
+        <td>id0</td>
+        <td>1/11/2016 - 15/11/2016</td>
+        <td>$300.00</td>
+      </tr>
+    </tbody>
+  </table>
+  <button id="button-show-modal" class="ui primary button">Upload Report</button>
+  <div id="modal-upload" class="ui modal">
+    <div class="header">Upload Report</div>
+    <div class="content">
+      <p></p>
+    </div>
+    <div class="actions">
+      <div class="ui approve primary button">Upload</div>
+      <div class="ui cancel button">Cancel</div>
+    </div>
+  </div>
 }

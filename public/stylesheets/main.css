@@ -1,0 +1,11 @@
+body  {
+  padding-top: 1em;
+  padding-right: 3em;
+  padding-left: 3em;
+}
+
+.ui.container > h1 {
+  font-size: 5em;
+  text-align: center;
+  font-weight: normal;
+}
