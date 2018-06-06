@@ -1,15 +1,15 @@
 # --- !Ups
-INSERT INTO employees(name)
-  VALUES
-    ('Elvis Presley'),
-    ('Buddy Holly'),
-    ('Ringo Stark');
-
 INSERT INTO groups (name, rate)
   VALUES
     ('A', 10.45),
     ('B', 25.55),
     ('C', 60.0);
+
+INSERT INTO employees(name, group_id)
+  VALUES
+    ('Elvis Presley', 'A'),
+    ('Buddy Holly', 'B'),
+    ('Ringo Stark', 'C');
 
 INSERT INTO hours (date, hours, employee_id)
   VALUES
