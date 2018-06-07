@@ -12,6 +12,7 @@ libraryDependencies += guice
 libraryDependencies ++= Seq(evolutions)
 libraryDependencies ++= Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
+  "com.github.nscala-time" %% "nscala-time" % "2.20.0",
   "com.github.tototoshi" %% "scala-csv" % "1.3.5",
   "com.typesafe.slick" %% "slick" % "3.2.3",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.2.3",

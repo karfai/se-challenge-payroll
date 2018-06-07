@@ -10,11 +10,12 @@ CREATE TABLE employees (
 );
 
 CREATE TABLE hours (
-    time_sheet_id varchar(50),
+    time_sheet_id varchar(50) NOT NULL,
     date date NOT NULL,
     hours decimal NOT NULL,
     employee_id int REFERENCES employees(id) NOT NULL,
-    group_id varchar(50) REFERENCES groups(name) NOT NULL
+    group_id varchar(50) REFERENCES groups(name) NOT NULL,
+    period varchar(10) NOT NULL
 );
 
 # --- !Downs

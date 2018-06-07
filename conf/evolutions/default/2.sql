@@ -13,4 +13,5 @@ INSERT INTO groups (name, rate)
     ('B', 30.0);
 
 # --- !Downs
+DELETE FROM employees;
 DELETE FROM groups;
