@@ -116,7 +116,7 @@ class TimeSheetsController @Inject()(cc: ControllerComponents, hours_repo: Hours
 
         val sorted = totals.keySet.toSeq.sorted.map { period =>
           val employees: Map[Long, EmployeePay] = totals(period)
-          employees.values.toSeq.sortWith { _.name > _.name }.map { ep =>
+          employees.values.toSeq.sortWith { _.name < _.name }.map { ep =>
             period.split("-") match {
               case Array(year, part) => {
                 val yi = year.toInt
