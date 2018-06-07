@@ -5,46 +5,18 @@
   <table class="ui celled table">
     <thead>
       <tr>
-        <th>Employee Id</th>
         <th>Pay Period</th>
+        <th>Employee</th>
+        <th>Groups</th>
         <th>Amount Paid</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="report-contents" data-bind="foreach: report">
       <tr>
-        <td>id0</td>
-        <td>1/11/2016 - 15/11/2016</td>
-        <td>$300.00</td>
-      </tr>
-      <tr>
-        <td>id0</td>
-        <td>1/11/2016 - 15/11/2016</td>
-        <td>$300.00</td>
-      </tr>
-      <tr>
-        <td>id0</td>
-        <td>1/11/2016 - 15/11/2016</td>
-        <td>$300.00</td>
-      </tr>
-      <tr>
-        <td>id0</td>
-        <td>1/11/2016 - 15/11/2016</td>
-        <td>$300.00</td>
-      </tr>
-      <tr>
-        <td>id0</td>
-        <td>1/11/2016 - 15/11/2016</td>
-        <td>$300.00</td>
-      </tr>
-      <tr>
-        <td>id0</td>
-        <td>1/11/2016 - 15/11/2016</td>
-        <td>$300.00</td>
-      </tr>
-      <tr>
-        <td>id0</td>
-        <td>1/11/2016 - 15/11/2016</td>
-        <td>$300.00</td>
+        <td data-bind="text: period"></td>
+        <td data-bind="text: name"></td>
+        <td data-bind="text: groups"></td>
+        <td>$<span data-bind="text: total" /></td>
       </tr>
     </tbody>
   </table>
