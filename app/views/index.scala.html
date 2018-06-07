@@ -2,6 +2,26 @@
 
 @main("Payroll Report") {
   <h1>Payroll Report</h1>
+
+  <div id="upload">
+    <div class="ui form attached fluid segment">
+      <div class="inline fields">
+        <div class="field">
+          <label for="filename" class="ui icon button">
+            <i class="file icon"></i>
+            <span data-bind="text: file_label"></span>
+          </label>
+          <input type="file" id="filename" data-bind="event: { change: keep_file }" style="display: none" />
+        </div>
+        <div class="field">
+          <button class="ui primary button" data-bind="click: upload, css: { disabled: !have_file() }">Upload Report</button>
+        </div>
+      </div>
+    </div>
+    <div class="ui attached bottom error message" data-bind="css: { hidden: no_errors }">
+      <span data-bind="text: error_message"></span>
+    </div>
+  </div>
   <table class="ui celled table">
     <thead>
       <tr>
@@ -20,15 +40,4 @@
       </tr>
     </tbody>
   </table>
-  <button id="button-show-modal" class="ui primary button">Upload Report</button>
-  <div id="modal-upload" class="ui modal">
-    <div class="header">Upload Report</div>
-    <div class="content">
-      <p></p>
-    </div>
-    <div class="actions">
-      <div class="ui approve positive button">Upload</div>
-      <div class="ui cancel negative button">Cancel</div>
-    </div>
-  </div>
 }
