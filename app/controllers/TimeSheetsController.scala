@@ -1,15 +1,15 @@
 package controllers
 
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.nio.file.{ Files, Path }
 import javax.inject._
 import collection.JavaConverters._
 
+import akka.actor.{ ActorRef }
+import akka.pattern.ask
 import akka.stream.IOResult
 import akka.stream.scaladsl._
-import akka.util.ByteString
-import com.github.nscala_time.time.Imports._
-import com.github.tototoshi.csv._
+import akka.util.{ ByteString, Timeout }
 import play.api._
 import play.api.data.Form
 import play.api.data.Forms._
@@ -20,14 +20,20 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc._
 import play.core.parsers.Multipart.FileInfo
 import scala.concurrent.Promise
+import scala.concurrent.duration._
 import scala.util.{ Success, Failure }
 
-import models.{ HoursRepository, TimeSheetsRepository }
+import actors.{ Messages }
+import models.{ EmployeePay, EmployeePayPeriod }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TimeSheetsController @Inject()(cc: ControllerComponents, hours_repo: HoursRepository, time_sheets_repo: TimeSheetsRepository) extends AbstractController(cc) {
+class TimeSheetsController @Inject()(
+  @Named("actors-parse-report") actor_parse_report: ActorRef,
+  @Named("actors-payroll-report") actor_payroll_report: ActorRef,
+  cc: ControllerComponents
+) extends AbstractController(cc) {
   type FilePartHandler[A] = (FileInfo) => Accumulator[ByteString, FilePart[A]]
 
   private def handleFilePartAsFile: FilePartHandler[File] = {
@@ -43,47 +49,58 @@ class TimeSheetsController @Inject()(cc: ControllerComponents, hours_repo: Hours
     }
   }
 
+  implicit val timeout: Timeout = 5.seconds
+
   def create() = Action.async(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
     val pr = Promise[Result]()
-    val fileOption = request.body.file("content").map {
-      case FilePart(k, fn, ct, file) => {
-        val rdr = CSVReader.open(file)
-        rdr.allWithHeaders().reverse match {
-          case (report: Map[String, String]) :: tail => {
-            val report_id = report("hours worked")
-            time_sheets_repo.sheet_exists(report_id).onComplete {
-              case Success(exists) => {
-                if (!exists) {
-                  val entries = tail.map { ln => Tuple4(ln("date"), ln("hours worked").toDouble, ln("employee id").toInt, ln("job group")) }
-                  hours_repo.add_many(report_id, entries).onComplete {
-                    case Success(len) => {
-                      pr.success(Ok(Json.obj("status" -> "ok")))
-                    }
-                    case Failure(e) => {
-                      println(e)
-                      pr.success(InternalServerError(Json.obj("status" -> "insert_failure")))
-                    }
-                  }
+
+    request.body.file("content").map {
+      case FilePart(path, file_name, content_type, file) => {
+        (actor_parse_report ? Messages.TimeSheetReceived(file)).onComplete {
+          case Success(m) => {
+            m match {
+              case Messages.ReportProcessed(exists, id) => {
+                if (exists) {
+                  pr.success(
+                    Forbidden(
+                      Json.obj(
+                        "status"  -> "report_exists",
+                        "message" -> s"Report exists (id=${id})",
+                        "args"    -> Map("id" -> id)))
+                  )
                 } else {
-                  pr.success(Forbidden(Json.obj("status" -> "report_exists", "args" -> Map("id" -> report_id), "message" -> s"Report exists (id=${report_id})")))
+                  pr.success(
+                    Ok(Json.obj("status" -> "ok", "args" -> Map("id" -> id)))
+                  )
                 }
               }
-              case Failure(e) => pr.success(InternalServerError(Json.obj("status" -> "database_failure")))
+
+              case Messages.ReportParseFailed() => {
+                pr.success(
+                  InternalServerError(
+                    Json.obj(
+                      "status"  -> "failure_report_parse",
+                      "message" -> s"Failed to parse the uploaded file"))
+                )
+              }
+
+              case Messages.DatabaseFailure(th) => {
+                pr.success(
+                  InternalServerError(Json.obj(
+                    "status"  -> "failure_database",
+                    "message" -> s"Failed to connect to database"))
+                )
+              }
             }
           }
-          case _ => pr.success(InternalServerError(Json.obj("status" -> "parse_failure")))
+
+          case Failure(e) => println(e)
         }
-
       }
-
-      case _ => pr.success(InternalServerError(Json.obj("status" -> "failure", "message" -> "data not received")))
     }
 
     pr.future
   }
-
-  case class EmployeePay(id: Long, name: String, groups: Set[String], total: Double)
-  case class EmployeePayPeriod(pay: EmployeePay, starts: String = null, ends: String = null)
 
   implicit val employee_pay_writes: Writes[EmployeePay] = (
     (JsPath \ "id").write[Long] and
@@ -100,50 +117,29 @@ class TimeSheetsController @Inject()(cc: ControllerComponents, hours_repo: Hours
 
   def periods() = Action.async { implicit result =>
     val pr = Promise[Result]()
-    time_sheets_repo.report.onComplete {
-      case Success(report) => {
-        // > (employee.id, employee.name, hours.period, hours.hours, group.name, group.rate)
-        // < Map[hours.period -> Map[employee.id -> EmployeePay]]
-        val totals = report.foldLeft(Map[String, Map[Long, EmployeePay]]()) { (m, tup) =>
-          val employees = m.getOrElse(tup._3, Map[Long, EmployeePay]())
-          val emp_pay = employees.get(tup._1) match {
-            case None => EmployeePay(tup._1, tup._2, Set(tup._5), tup._4 * tup._6)
-            case Some(ep) => EmployeePay(tup._1, tup._2, ep.groups ++ Set(tup._5), ep.total + tup._4 * tup._6)
-          }
-
-          m ++ Map(tup._3 -> (employees ++ Map(tup._1 -> emp_pay)))
+    (actor_payroll_report ? Messages.PayrollReportRequested()).onComplete {
+      case Success(m) => m match {
+        case Messages.PayrollReportCompleted(report) => {
+          pr.success(
+            Ok(
+              Json.obj("status" -> "ok", "report" -> report))
+          )
         }
 
-        val sorted = totals.keySet.toSeq.sorted.map { period =>
-          val employees: Map[Long, EmployeePay] = totals(period)
-          employees.values.toSeq.sortWith { _.name < _.name }.map { ep =>
-            period.split("-") match {
-              case Array(year, part) => {
-                val yi = year.toInt
-                val i = part.toInt
-                val month = i / 2
-                val dates = (i - month * 2) match {
-                  case 0 => (new DateTime(yi, month, 1, 0, 0, 0, 0), new DateTime(yi, month, 15, 0, 0, 0, 0))
-                  case 1 => {
-                    val start = new DateTime(yi, month, 16, 0, 0, 0, 0)
-                    (start, new DateTime(yi, month, start.dayOfMonth().getMaximumValue(), 0, 0, 0, 0))
-                  }
-                }
-
-                EmployeePayPeriod(ep, dates._1.toString("dd/MM/yyyy"), dates._2.toString("dd/MM/yyyy"))
-              }
-              case _ => EmployeePayPeriod(ep)
-            }
-          }
-        }.flatten
-
-        pr.success(Ok(Json.obj("status" -> "ok", "totals" -> sorted)))
+        case Messages.PayrollReportUnavailable() => {
+          pr.success(
+            InternalServerError(
+              Json.obj("status" -> "failure_report_unavailable"))
+          )
+        }
       }
-      case Failure(e) => {
-        println(e)
-        pr.success(Ok(""))
-      }
+
+      case Failure(th) => pr.success(
+        InternalServerError(
+          Json.obj("status" -> "failure_produce_report"))
+      )
     }
+
     pr.future
   }
 }

@@ -6,7 +6,7 @@ $(document).ready(function () {
   report_vm.update = function() {
     report_vm.report([]);
     $.getJSON("/time_sheets", function (report) {
-      report_vm.report(_.map(_.get(report, "totals"), function (o) {
+      report_vm.report(_.map(_.get(report, "report"), function (o) {
         return {
           name: o.pay.name,
           total: o.pay.total,

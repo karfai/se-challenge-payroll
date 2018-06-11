@@ -1,6 +1,5 @@
 name := """wave-challenge"""
 organization := "ca.strangeware"
-
 version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
@@ -20,3 +19,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
   "org.postgresql" % "postgresql" % "9.4.1209"
 )
+
+enablePlugins(JavaAppPackaging)
+enablePlugins(DockerPlugin)
+enablePlugins(AshScriptPlugin)
+
+dockerBaseImage := "openjdk:jre-alpine"
