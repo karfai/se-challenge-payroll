@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+  database:
+    image: postgres:wave-challenge
+    ports:
+      - "5432:5432"
+
+  app:
+    image: wave-challenge:1.0-SNAPSHOT
+    ports:
+      - "9000:9000"
+    environment:
+      POSTGRES_JDBC_URL: "jdbc:postgresql://database:5432/wave_payroll"
+      APP_AUTO_APPLY_EVOLUTIONS: "true"
+      APP_PLAY_SECRET: ${APP_PLAY_SECRET}
