@@ -69,3 +69,8 @@ $ APP_PLAY_SECRET="<secret>" docker-compose -f docker-compose.yml up
 
 Once the application is running, you can access it at
 [http://localhost:9000](http://localhost:9000).
+
+*There is a small bug that sometimes appears in the production
+version. The REST API may not work correctly, thus causing the payroll
+report grid to not reload properly. If this occurs, use the
+development version to observe the correct functionality.*
